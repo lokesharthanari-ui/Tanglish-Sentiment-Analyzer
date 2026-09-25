@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tanglish Sentiment Analyzer | NLP & Machine Learning</title>
+    <meta name="description" content="Natural Language Processing and Machine Learning based sentiment analyzer for Tanglish (Tamil-English code-mixed) comments.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Background Decor Elements -->
+    <div class="bg-blur blur-1"></div>
+    <div class="bg-blur blur-2"></div>
+    <div class="bg-blur blur-3"></div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="badge-tag">
+                <i class="fa-solid fa-brain"></i> NLP & Machine Learning Project
+            </div>
+            <h1>Tanglish Sentiment Analyzer</h1>
+            <p class="subtitle">
+                Analyze sentiment in <strong>Tanglish</strong> (Tamil written in English script) comments from social media, YouTube, and digital reviews using TF-IDF and Logistic Regression.
+            </p>
+        </header>
+
+        <!-- Main Card Container -->
+        <main class="main-content">
+            <!-- Input Card -->
+            <section class="card input-card">
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-pen-to-square"></i> Tanglish Text Input</h2>
+                    <span class="char-count" id="charCount">0 / 500 chars</span>
+                </div>
+                
+                <div class="textarea-wrapper">
+                    <textarea 
+                        id="tanglishInput" 
+                        placeholder="Type or paste your Tanglish text here... (e.g. Intha movie semma mass bro)" 
+                        maxlength="500"
+                        rows="4"></textarea>
+                    <button id="clearBtn" class="btn-clear-input" title="Clear text">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <!-- Action Controls -->
+                <div class="action-bar">
+                    <button id="analyzeBtn" class="btn btn-primary">
+                        <span class="btn-text"><i class="fa-solid fa-wand-magic-sparkles"></i> Analyze Sentiment</span>
+                        <span class="spinner" id="spinner"></span>
+                    </button>
+                    <button id="resetBtn" class="btn btn-secondary">
+                        <i class="fa-solid fa-rotate-left"></i> Reset
+                    </button>
+                </div>
+
+                <!-- Preset Quick Example Buttons -->
+                <div class="examples-wrapper">
+                    <span class="examples-label"><i class="fa-solid fa-lightbulb"></i> Try quick examples:</span>
+                    <div class="example-chips">
+                        <button class="chip" data-text="Intha movie semma mass bro">
+                            <span class="chip-dot positive"></span> "Intha movie semma mass bro"
+                        </button>
+                        <button class="chip" data-text="Padam romba mokka">
+                            <span class="chip-dot negative"></span> "Padam romba mokka"
+                        </button>
+                        <button class="chip" data-text="Movie okay ah iruku">
+                            <span class="chip-dot neutral"></span> "Movie okay ah iruku"
+                        </button>
+                        <button class="chip" data-text="Vera level thala acting semma">
+                            <span class="chip-dot positive"></span> "Vera level thala acting semma"
+                        </button>
+                        <button class="chip" data-text="Padam 100% waste of time and money">
+                            <span class="chip-dot negative"></span> "Padam 100% waste of time"
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Results Output Card (Initially Hidden or Placeholder) -->
+            <section class="card result-card" id="resultSection">
+                <div class="result-placeholder" id="resultPlaceholder">
+                    <div class="placeholder-icon">
+                        <i class="fa-solid fa-chart-pie"></i>
+                    </div>
+                    <h3>Sentiment Output Ready</h3>
+                    <p>Enter a Tanglish text above and click <strong>Analyze Sentiment</strong> to view machine learning predictions.</p>
+                </div>
+
+                <div class="result-content hidden" id="resultContent">
+                    <div class="result-header">
+                        <h2>Analysis Result</h2>
+                        <span class="confidence-badge" id="confidenceBadge">
+                            <i class="fa-solid fa-gauge-high"></i> <span id="confidenceVal">94%</span> Confidence
+                        </span>
+                    </div>
+
+                    <!-- Primary Sentiment Display -->
+                    <div class="sentiment-banner" id="sentimentBanner">
+                        <div class="sentiment-icon-wrapper" id="sentimentIconWrapper">
+                            <i class="fa-solid fa-face-smile" id="sentimentIcon"></i>
+                        </div>
+                        <div class="sentiment-info">
+                            <span class="sentiment-label-small">Predicted Sentiment</span>
+                            <h3 class="sentiment-title" id="sentimentTitle">Positive</h3>
+                            <p class="sentiment-desc" id="sentimentDesc">The comment expresses enthusiasm, appreciation, or positive emotion.</p>
+                        </div>
+                    </div>
+
+                    <!-- Preprocessed Text Breakdown -->
+                    <div class="text-breakdown">
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Original Input:</span>
+                            <p class="breakdown-val text-quote" id="origTextVal">""</p>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Cleaned TF-IDF Input:</span>
+                            <p class="breakdown-val code-quote" id="cleanedTextVal">""</p>
+                        </div>
+                    </div>
+
+                    <!-- Class Probabilities Breakdown -->
+                    <div class="probabilities-container">
+                        <div class="probabilities-header">
+                            <span><i class="fa-solid fa-chart-bar"></i> Probability Distribution</span>
+                        </div>
+                        
+                        <div class="prob-row">
+                            <div class="prob-meta">
+                                <span class="prob-name"><i class="fa-solid fa-circle-check pos-color"></i> Positive</span>
+                                <span class="prob-percent" id="probPosVal">0%</span>
+                            </div>
+                            <div class="progress-bar-bg">
+                                <div class="progress-bar pos-bar" id="barPos" style="width: 0%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="prob-row">
+                            <div class="prob-meta">
+                                <span class="prob-name"><i class="fa-solid fa-circle-minus neu-color"></i> Neutral</span>
+                                <span class="prob-percent" id="probNeuVal">0%</span>
+                            </div>
+                            <div class="progress-bar-bg">
+                                <div class="progress-bar neu-bar" id="barNeu" style="width: 0%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="prob-row">
+                            <div class="prob-meta">
+                                <span class="prob-name"><i class="fa-solid fa-circle-xmark neg-color"></i> Negative</span>
+                                <span class="prob-percent" id="probNegVal">0%</span>
+                            </div>
+                            <div class="progress-bar-bg">
+                                <div class="progress-bar neg-bar" id="barNeg" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Stats & Features Banner -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <i class="fa-solid fa-database"></i>
+                <div class="stat-info">
+                    <h4>14,242 Comments</h4>
+                    <p>Cleaned Tanglish Dataset</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <i class="fa-solid fa-diagram-project"></i>
+                <div class="stat-info">
+                    <h4>TF-IDF Vectorizer</h4>
+                    <p>Unigrams & Bigrams</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <i class="fa-solid fa-robot"></i>
+                <div class="stat-info">
+                    <h4>Logistic Regression</h4>
+                    <p>3-Class Classifier</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>Tanglish Sentiment Analyzer &copy; 2026 | Developed with Python, Flask, scikit-learn, HTML, CSS & JavaScript</p>
+        </footer>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
